@@ -1,0 +1,50 @@
+Scene: graphics simulation
+Default: /home/paul/dev/graphics/assets/mesh/robots/panda/panda.xml
+Joints:
+  - joint: finger_joint2
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+  - joint: finger_joint1
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+  - joint: joint6
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+  - joint: joint5
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+  - joint: joint3
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+  - joint: joint2
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+  - joint: joint7
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+  - joint: joint4
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+  - joint: joint1
+    configuration:
+      w: [0, 0, 1]
+      a: 0
+Entities:
+  - entity: cube
+    type: Cube
+    color: [1, 1, 1, 1]
+    transform:
+      p: [0.379000008, 0.398000002, 0.225999996]
+      e: [0, -0, 0]
+      q: [1, 0, 0, 0]
+      s: [0.129999995, 0.129999995, 0.129999995]
+      w: [1, 0, 0]
+      a: 0

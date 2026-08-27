@@ -1,0 +1,59 @@
+Scene: graphics simulation
+Default: /home/paul/dev/graphics/assets/mesh/robots/panda/panda.xml
+Joints:
+  - joint: finger_joint2
+    configuration:
+      type: slide
+      range: [0, 0.0399999991]
+      w: [0, 1, 0]
+      a: 0
+  - joint: finger_joint1
+    configuration:
+      type: slide
+      range: [0, 0.0399999991]
+      w: [0, 1, 0]
+      a: 0
+  - joint: joint6
+    configuration:
+      type: hinge
+      range: [-0.0175000001, 3.75250006]
+      w: [0, 0, 1]
+      a: 0.659200013
+  - joint: joint5
+    configuration:
+      type: hinge
+      range: [-300, 300]
+      w: [0, 0, 1]
+      a: 0.112499997
+  - joint: joint3
+    configuration:
+      type: hinge
+      range: [-300, 300]
+      w: [0, 0, 1]
+      a: 0.138500005
+  - joint: joint2
+    configuration:
+      type: hinge
+      range: [-1.76279998, 1.76279998]
+      w: [0, 0, 1]
+      a: 1.35689998
+  - joint: joint7
+    configuration:
+      type: hinge
+      range: [-300, 300]
+      w: [0, 0, 1]
+      a: 0.168599993
+  - joint: joint4
+    configuration:
+      type: hinge
+      range: [-3.07179999, -0.0697999969]
+      w: [0, 0, 1]
+      a: -0.217199996
+  - joint: joint1
+    configuration:
+      type: hinge
+      range: [-300, 300]
+      w: [0, 0, 1]
+      a: 0.138500005
+Entities:
+  []

@@ -1,0 +1,35 @@
+Scene: graphics simulation
+Default: ""
+Joints:
+  []
+Entities:
+  - entity: ground
+    type: Cube
+    color: [1, 1, 1, 1]
+    transform:
+      p: [0.0719851106, 0, -1.13238752]
+      e: [0, -0, 0]
+      q: [1, 0, 0, 0]
+      s: [9.81581688, 8.93732262, 0.0200990625]
+      w: [1, 0, 0]
+      a: 0
+  - entity: sphere2
+    type: Sphere
+    color: [1, 0.534031391, 0.534031391, 1]
+    transform:
+      p: [0.776068568, 0, 0]
+      e: [0, -0, 0]
+      q: [1, 0, 0, 0]
+      s: [1, 1, 1]
+      w: [1, 0, 0]
+      a: 0
+  - entity: sphere1
+    type: Sphere
+    color: [0.748691082, 0.759217143, 1, 1]
+    transform:
+      p: [-0.450643659, 0, 0]
+      e: [0, -0, 0]
+      q: [1, 0, 0, 0]
+      s: [1, 1, 1]
+      w: [1, 0, 0]
+      a: 0

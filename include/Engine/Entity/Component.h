@@ -1,0 +1,228 @@
+#ifndef SKYNET_ENGINE_ENTITY_COMPONENT_H
+#define SKYNET_ENGINE_ENTITY_COMPONENT_H
+
+#include "Data.h"
+#include "System.h"
+#include "Mesh.h"
+#include "Vector.h"
+#include "Point.h"
+#include "RigidBody.h"
+#include "BVHData.h"
+#include "BVHFunc.h"
+#include "Titan.hpp"
+#include "Renderer.h"
+
+namespace Skynet
+{
+    struct LinkTransformComp {
+        titan::vec3 p_local;
+        titan::quat q_local;
+
+        titan::vec3 p_world;
+        titan::quat q_world;
+
+        titan::vec3 s = {1.0f, 1.0f, 1.0f};
+        titan::mat4 T;
+
+        LinkTransformComp() = default;
+        LinkTransformComp(const LinkTransformComp&) = default;
+        LinkTransformComp(titan::vec3 p) : p_local(p) {}
+
+        inline void SetWorldTransform(titan::mat4& T_world) {
+            T = T_world;
+        }
+
+        inline void DecomposeTransform() {}
+
+        inline titan::mat4 GetLocalTransform() {
+            return titan::Transcale(p_local, s) * q_local.Quat2T();
+        }
+
+        inline titan::mat4& GetWorldTransform() { return T; }
+    };
+
+    struct TransformComp {
+        titan::vec3 p;
+        titan::vec3 e;
+        titan::vec3 s = {1.0f, 1.0f, 1.0f};
+        titan::quat q;
+        titan::mat4 T;
+
+        TransformComp() = default;
+        TransformComp(const TransformComp&) = default;
+        TransformComp(titan::vec3 p, titan::vec3 e, titan::vec3 s, titan::quat q) 
+            :p(p), e(e), s(s), q(q)  { }
+
+        inline titan::mat4 GetTransform(const RotType& type = RotType::Euler) {
+            titan::mat4 R;
+            switch(type) {
+                case(RotType::Quaternion) : R = q.Quat2T();  break;
+                case(RotType::Euler)      : R = titan::Euler2T(this->e); break;
+            }
+            return titan::Transcale(this->p, this->s) * R;
+        }
+    };
+
+    struct RigidBodyComp {
+        RigidBody body;
+        BodyType type;
+
+        RigidBodyComp() = default;
+        RigidBodyComp(const RigidBodyComp&) = default;
+        RigidBodyComp(const BodyType& type, const float mass) {
+            this->type = type;
+            body.SetMass(mass);
+            body.SetInertialTensor(0.5f, 0.5f, 0.5f);
+        }
+    };
+
+    struct MeshComp {
+        ref<Mesh> mesh = cref<Mesh>();
+        Object type;
+
+        MeshComp() = default;
+        MeshComp(const MeshComp&) = default;
+
+        template<typename... Args>
+        MeshComp(const Object& type, Args&&... args) : type(type) {
+            switch(type) {
+                case(Object::Mesh): 
+                    if constexpr (sizeof...(Args) == 2) mesh->GenMesh(std::forward<Args>(args)...);
+                    else ASSERT(false, "Invalid number of arguments for Mesh");
+                    break;
+
+                case(Object::Cube):
+                    if constexpr (sizeof...(Args) == 3) mesh->GenCube(std::forward<Args>(args)...);
+                    else ASSERT(false, "Invalid number of arguments for Cube");
+                    break;
+
+                case(Object::Sphere):
+                    if constexpr (sizeof...(Args) == 1) mesh->GenSphere(std::forward<Args>(args)...);
+                    else ASSERT(false, "Invalid number of arguments for Sphere");
+                    break;
+
+                default: ASSERT(false, "Invalid object type");
+            }
+        }
+    };
+
+    struct VectorComp {
+        Vector vector;
+        VectorComp() = default;
+        VectorComp(const VectorComp&) = default;
+        VectorComp(titan::vec3 start, titan::vec3 end) { 
+            vector.Submit(start.raw(), end.raw());
+            vector.InitGL();
+        }
+    };
+
+    struct PointComp {
+        Point point;
+        PointComp() = default;
+        PointComp(const PointComp&) = default;
+        PointComp(titan::vec3 p) { 
+            point.Submit(p.raw());
+        }
+    };
+
+    struct PointCloud {
+        list<Point> points;
+        list<Vector> lines;
+
+        PointCloud() = default;
+        PointCloud(const PointCloud&) = default;
+
+        inline void Clear() {
+            points.clear();
+            lines.clear();
+        }
+
+        inline int Length() {
+            return (int)points.size();
+        }
+
+        inline void Add(titan::vec3 point) {
+            points.push_back(Point(point));
+        }
+
+        inline void MakeLines() {
+            for (int i=1; i<points.size(); i++)
+                for (int j=i+1; j<points.size(); j++)
+                    lines.push_back(Vector(points[i].GetPoint(), 
+                                           points[j].GetPoint()));
+        }
+
+        inline void Pop() {
+            points.pop_back();
+        }
+
+        inline void Render() {
+            for (auto& p : points) Renderer::DrawPoint(p.GetVA());
+            for (auto& v : lines) Renderer::DrawLine(v.GetVA());
+        }
+    };
+
+    static std::vector<std::pair<int, int>> edges = {
+        {0, 1}, {1, 3}, {3, 2}, {2, 0},
+        {4, 5}, {5, 7}, {7, 6}, {6, 4},
+        {0, 4}, {1, 5}, {3, 7}, {2, 6}
+    };
+
+    struct BVHComp {
+        int maxDepth = 1;
+        BVHNode* root = nullptr;
+        list<Vector> lines;
+        titan::vec4 color = {1.0f, 0.0f, 0.0f, 1.0f};
+
+        BVHComp() = default;
+        BVHComp(const ref<Mesh>& mesh) {
+            Compute(mesh);
+        }
+
+        inline void Compute(const ref<Mesh>& mesh) {
+            if (root) delete root;
+            lines.clear();
+
+            BVH::BuildHierarchyTree(root, mesh);
+            BVH::HierarchySplit(root, 0, maxDepth, mesh);
+            this->DrawNodes(root, 0);
+        }
+
+        inline void DrawNodes(BVHNode* node, int depth) {
+            if (!node || depth >= maxDepth) return;
+            list<titan::vec3> corners = node->box.GetCorners();
+
+            for (auto& [start, end] : edges) {
+                lines.push_back(Vector(corners[start],  corners[end]));
+            }
+
+            DrawNodes(node->childA, depth + 1);
+            DrawNodes(node->childB, depth + 1);
+        }
+
+        inline void Render(const ref<Shader>& shad) {
+            for (Vector& line : lines) {
+                shad->SetFloat4("color", color.raw());
+                Renderer::DrawLine(line.GetVA());
+            }
+        }
+    };
+
+    struct TextureComp {
+        float color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        TextureComp() = default;
+        TextureComp(const TextureComp&) = default;
+        TextureComp(const float* c) { std::copy(c, c + 4, this->color); }
+    };
+
+    struct TagComp {
+        std::string tag;
+        TagComp() = default;
+        TagComp(const TagComp&) = default;
+        TagComp(const std::string& tag) : tag(tag) { }
+    };
+
+} // namespace Skynet
+
+
+#endif // SKYNET_ENGINE_ENTITY_COMPONENT_H
